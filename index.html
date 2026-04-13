@@ -222,10 +222,11 @@ function App(){
   }
 
   /* JOGO */
+  const isMobile=window.innerWidth<640;
   return(
-    <div style={{...BS,minHeight:"100vh",height:"100vh",display:"flex",position:"relative",maxWidth:900,margin:"0 auto"}}>
+    <div style={{...BS,minHeight:"100vh",height:"100vh",display:"flex",flexDirection:isMobile?"column":"row",position:"relative",maxWidth:900,margin:"0 auto"}}>
       <div style={{position:"absolute",inset:0,background:OV}}/>
-      <div style={{position:"relative",zIndex:1,width:108,padding:"10px 5px 10px 7px",display:"flex",flexDirection:"column",justifyContent:"flex-end",gap:3,background:"rgba(0,0,0,0.38)",borderRight:"1px solid rgba(255,255,255,0.08)",flexShrink:0}}>
+      {!isMobile&&<div style={{position:"relative",zIndex:1,width:108,padding:"10px 5px 10px 7px",display:"flex",flexDirection:"column",justifyContent:"flex-end",gap:3,background:"rgba(0,0,0,0.38)",borderRight:"1px solid rgba(255,255,255,0.08)",flexShrink:0}}>
         {[...NIVEIS].reverse().map((n,i)=>{
           const nr=NIVEIS.length-1-i,at=nr===nivel,pa=nr<nivel;
           return(<div key={i} style={{background:at?(n.s?"#b45309":"#1d4ed8"):n.s?"rgba(146,64,14,0.4)":pa?"rgba(21,128,61,0.22)":"rgba(15,23,42,0.75)",border:`1px solid ${at?"#fbbf24":n.s?"#92400e":pa?"#166534":"rgba(255,255,255,0.08)"}`,borderRadius:5,padding:"3px 5px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -234,8 +235,18 @@ function App(){
             {n.s&&<span style={{fontSize:8}}>🛡️</span>}
           </div>);
         })}
-      </div>
-      <div style={{position:"relative",zIndex:1,flex:1,display:"flex",flexDirection:"column",padding:"12px 13px",minWidth:0}}>
+      </div>}
+      <div style={{position:"relative",zIndex:1,flex:1,display:"flex",flexDirection:"column",padding:isMobile?"10px 12px":"12px 13px",minWidth:0,overflowY:"auto"}}>
+        {isMobile&&<div style={{display:"flex",gap:4,overflowX:"auto",paddingBottom:6,marginBottom:6,scrollbarWidth:"none"}}>
+          {NIVEIS.map((n,i)=>{
+            const at=i===nivel,pa=i<nivel;
+            return(<div key={i} style={{flexShrink:0,background:at?(n.s?"#b45309":"#1d4ed8"):n.s?"rgba(146,64,14,0.5)":pa?"rgba(21,128,61,0.25)":"rgba(15,23,42,0.8)",border:`1px solid ${at?"#fbbf24":n.s?"#92400e":pa?"#166534":"rgba(255,255,255,0.1)"}`,borderRadius:6,padding:"4px 8px",textAlign:"center",minWidth:44}}>
+              <div style={{fontSize:8,color:at?"#fff":"rgba(255,255,255,0.3)"}}>{i+1}</div>
+              <div style={{fontSize:9,fontWeight:800,color:at?"#fbbf24":n.s?"#f59e0b":pa?"#4ade80":"rgba(255,255,255,0.4)"}}>{n.pts>=1000?(n.pts/1000)+"K":n.pts}</div>
+              {n.s&&<div style={{fontSize:7}}>🛡️</div>}
+            </div>);
+          })}
+        </div>}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <div>
             <div style={{fontSize:13,fontWeight:900,color:"#fbbf24",letterSpacing:1}}>🎯 Quiz ExpressGlass</div>
@@ -254,10 +265,10 @@ function App(){
         <div style={{background:"rgba(5,10,30,0.88)",border:"2px solid rgba(251,191,36,0.28)",borderRadius:16,padding:16,marginBottom:11,minHeight:88,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(12px)",boxShadow:"0 0 36px rgba(251,191,36,0.12)"}}>
           {load
             ?<div style={{textAlign:"center"}}><div style={{fontSize:26,marginBottom:5}}>⏳</div><div style={{color:"rgba(255,255,255,0.35)",fontSize:12}}>A preparar pergunta...</div></div>
-            :<div style={{fontSize:14,fontWeight:700,textAlign:"center",color:"#f1f5f9",lineHeight:1.6}}>{perg?.q}</div>}
+            :<div style={{fontSize:isMobile?15:14,fontWeight:700,textAlign:"center",color:"#f1f5f9",lineHeight:1.6}}>{perg?.q}</div>}
         </div>
         {!load&&perg&&(
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:10}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:isMobile?6:7,marginBottom:10}}>
             {perg.o.map((op,i)=>{
               const c=cO(i);
               return(<button key={i} onClick={()=>resp(i)} disabled={elim.includes(i)||sel!==null||load}
@@ -281,7 +292,7 @@ function App(){
           </div>
         )}
         {fase==="resposta"&&(
-          <button onClick={avancar} style={{background:sel===cor?"linear-gradient(135deg,#15803d,#166534)":"linear-gradient(135deg,#991b1b,#7f1d1d)",border:"none",borderRadius:50,padding:13,color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",width:"100%"}}>
+          <button onClick={avancar} style={{background:sel===cor?"linear-gradient(135deg,#15803d,#166534)":"linear-gradient(135deg,#991b1b,#7f1d1d)",border:"none",borderRadius:50,padding:isMobile?15:13,color:"#fff",fontSize:isMobile?15:14,fontWeight:800,cursor:"pointer",width:"100%"}}>
             {sel===cor?nivel<NIVEIS.length-1?`Avançar → ${NIVEIS[nivel+1].pts.toLocaleString()} serv.`:"🏆 VENCESTE!":`Levei ${ptS.toLocaleString()} serviços`}
           </button>
         )}

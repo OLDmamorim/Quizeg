@@ -29,7 +29,14 @@ const PEG=[
   {q:"Qual a base de dados do agendamentosm?",o:["MySQL","MongoDB","Neon PostgreSQL","SQLite"],c:2,e:"PostgreSQL no Neon."},
   {q:"O que é o ADAS nos veículos modernos?",o:["Sistema de climatização","Câmara traseira","Sistema de assistência ao condutor","Travão automático"],c:2,e:"ADAS — câmaras no para-brisas que precisam de recalibração após substituição."},
 ];
-const CATS=["código da estrada e legislação de trânsito em Portugal","história dos automóveis, marcas e modelos","vidros automóvel, para-brisas e manutenção","geografia de Portugal, cidades e curiosidades"];
+const CATS=[
+  {id:"marcas",    icon:"🚗", label:"Marcas & Modelos",   prompt:"marcas de automóveis, modelos icónicos e história da indústria automóvel"},
+  {id:"tecnologia",icon:"🔧", label:"Tecnologia Auto",    prompt:"tecnologia automóvel: motores, sistemas de segurança, ADAS e inovação"},
+  {id:"vidros",    icon:"🪟", label:"Vidros Automóvel",   prompt:"vidros automóvel: para-brisas, reparação, substituição e calibração ADAS"},
+  {id:"estrada",   icon:"🛣️", label:"Código da Estrada",  prompt:"código da estrada português, sinalização, regras e manutenção de veículos"},
+  {id:"expressglass",icon:"🏢",label:"ExpressGlass",      prompt:"EG_STATIC"},
+  {id:"resultados",icon:"📊", label:"Resultados EG",      prompt:"EG_REALDATA"},
+];
 const DIFS=["muito fácil","muito fácil","fácil","fácil","média","média","difícil","difícil","muito difícil","extremamente difícil","quase impossível","impossível"];
 const LT=["A","B","C","D"];
 const OV="rgba(5,5,20,0.80)";
@@ -71,40 +78,42 @@ function App(){
     // Cada 3 perguntas: 1 pergunta EG estática, 1 com dados reais PoweringEG, 1 IA
     const slot=nv%3;
 
-    // Slot 0: pergunta EG estática (sobre a empresa, portais, etc)
-    if(slot===0&&eu.length<PEG.length){
+    // Escolher categoria — rodar pelas 6, mas EG_STATIC e EG_REALDATA têm tratamento especial
+    const catObj = CATS[nv % CATS.length];
+
+    // Categoria: EG estática
+    if(catObj.prompt==="EG_STATIC"&&eu.length<PEG.length){
       const d=PEG.filter((_,i)=>!eu.includes(i));
       const ix=Math.floor(Math.random()*d.length);
       const pi=PEG.indexOf(d[ix]);
       setEgu(prev=>[...prev,pi]);
-      setPerg({q:d[ix].q,o:d[ix].o,c:d[ix].c,e:d[ix].e,eg:true});
+      setPerg({q:d[ix].q,o:d[ix].o,c:d[ix].c,e:d[ix].e,eg:true,catIcon:"🏢",catLabel:"ExpressGlass"});
       setLoad(false);return;
     }
 
-    // Slot 1: pergunta com dados reais do PoweringEG
-    if(slot===1){
+    // Categoria: Resultados reais PoweringEG
+    if(catObj.prompt==="EG_REALDATA"){
       try{
         const res=await fetch(API_Q,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({useRealData:true})});
         const dat=await res.json();
         if(dat.realData){
-          setPerg(dat.realData);
+          setPerg({...dat.realData,catIcon:"📊",catLabel:"Resultados EG"});
           setLoad(false);return;
         }
       }catch{}
-      // fallback para IA se falhar
+      // fallback para próxima categoria se falhar
     }
 
-    // Slot 2 (ou fallback): pergunta gerada por IA
-    const cat=CATS[Math.floor(Math.random()*CATS.length)];
+    // Categoria IA: automóvel/vidros
     const dif=DIFS[Math.min(nv,DIFS.length-1)];
     const ps=pu.length?"Nao repitas: "+pu.slice(-4).join(" | "):"";
     const seed=Math.floor(Math.random()*9999);
-    const prompt=`Gera UMA pergunta DIFERENTE e SURPREENDENTE (seed:${seed}) sobre: ${cat}. Dificuldade: ${dif} (nivel ${nv+1} de ${NIVEIS.length}). ${ps} Nao uses perguntas obvias ou repetidas. Em Portugues de Portugal. Responde APENAS com JSON valido sem markdown: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""} - correta e o indice 0-3. Baralha opcoes.`;
+    const prompt=`Gera UMA pergunta DIFERENTE e SURPREENDENTE (seed:${seed}) sobre: ${catObj.prompt}. Dificuldade: ${dif} (nivel ${nv+1} de ${NIVEIS.length}). ${ps} A pergunta deve ser SEMPRE relacionada com automóveis, viação ou vidros. Nao uses perguntas obvias. Em Portugues de Portugal. Responde APENAS com JSON valido sem markdown: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""} - correta e o indice 0-3. Baralha opcoes.`;
     try{
       const res=await fetch(API_Q,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
       const dat=await res.json();
       const obj=JSON.parse((dat.text||"").replace(/```json|```/g,"").trim());
-      setPerg({q:obj.pergunta,o:obj.opcoes,c:obj.correta,e:obj.explicacao});
+      setPerg({q:obj.pergunta,o:obj.opcoes,c:obj.correta,e:obj.explicacao,catIcon:catObj.icon,catLabel:catObj.label});
     }catch{
       setPerg({q:"Erro ao carregar. Usa Pular.",o:["—","—","—","—"],c:-1,e:""});
     }
@@ -158,7 +167,15 @@ function App(){
         <div style={{fontSize:11,color:"#f59e0b",letterSpacing:6,fontWeight:700,marginBottom:6}}>EXPRESSGLASS</div>
         <div style={{fontSize:72,fontWeight:900,background:"linear-gradient(135deg,#fbbf24,#f59e0b)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1,marginBottom:2}}>QUIZ</div>
         <div style={{fontSize:28,fontWeight:800,background:"linear-gradient(135deg,#fbbf24,#d97706)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",lineHeight:1,marginBottom:4}}>ExpressGlass</div>
-        <div style={{fontSize:10,color:"rgba(255,255,255,0.4)",letterSpacing:2,marginBottom:24}}>POWERING EG EDITION</div>
+        <div style={{fontSize:10,color:"rgba(255,255,255,0.4)",letterSpacing:2,marginBottom:16}}>POWERING EG EDITION</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:20,maxWidth:340,margin:"0 auto 20px"}}>
+          {CATS.map(c=>(
+            <div key={c.id} style={{background:"rgba(15,23,42,0.75)",border:"1px solid rgba(251,191,36,0.25)",borderRadius:8,padding:"7px 4px",textAlign:"center",backdropFilter:"blur(4px)"}}>
+              <div style={{fontSize:18,marginBottom:2}}>{c.icon}</div>
+              <div style={{fontSize:9,color:"rgba(255,255,255,0.6)",fontWeight:600,lineHeight:1.2}}>{c.label}</div>
+            </div>
+          ))}
+        </div>
         <div style={{display:"flex",flexDirection:"column",gap:3,marginBottom:24,alignItems:"center"}}>
           {[...NIVEIS].reverse().map((n,i)=>{
             const nr=NIVEIS.length-1-i;
@@ -291,7 +308,7 @@ function App(){
             {fase==="jogo"&&nivel>0&&<button onClick={desistir} style={{background:"rgba(15,23,42,0.75)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:16,padding:"4px 9px",color:"rgba(255,255,255,0.6)",fontSize:10,cursor:"pointer"}}>Desistir</button>}
           </div>
         </div>
-        {perg?.eg&&!load&&<div style={{background:perg?.realData?"rgba(20,83,45,0.88)":"rgba(30,58,95,0.88)",border:`1px solid ${perg?.realData?"#4ade80":"#3b82f6"}`,borderRadius:8,padding:"4px 10px",marginBottom:8,fontSize:10,color:perg?.realData?"#bbf7d0":"#93c5fd",fontWeight:700,textAlign:"center"}}>{perg?.realData?"📊 DADOS REAIS EXPRESSGLASS":"🏢 PERGUNTA EXPRESSGLASS"}</div>}
+        {perg?.catLabel&&!load&&<div style={{background:perg?.catLabel==="Resultados EG"?"rgba(20,83,45,0.88)":perg?.eg?"rgba(30,58,95,0.88)":"rgba(30,27,75,0.88)",border:`1px solid ${perg?.catLabel==="Resultados EG"?"#4ade80":perg?.eg?"#3b82f6":"#7c3aed"}`,borderRadius:8,padding:"4px 10px",marginBottom:8,fontSize:10,color:perg?.catLabel==="Resultados EG"?"#bbf7d0":perg?.eg?"#93c5fd":"#c4b5fd",fontWeight:700,textAlign:"center"}}>{perg?.catIcon} {perg?.catLabel?.toUpperCase()}</div>}
         <div style={{background:"rgba(5,10,30,0.88)",border:"2px solid rgba(251,191,36,0.28)",borderRadius:16,padding:16,marginBottom:11,minHeight:88,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(12px)",boxShadow:"0 0 36px rgba(251,191,36,0.12)"}}>
           {load
             ?<div style={{textAlign:"center"}}><div style={{fontSize:26,marginBottom:5}}>⏳</div><div style={{color:"rgba(255,255,255,0.35)",fontSize:12}}>A preparar pergunta...</div></div>

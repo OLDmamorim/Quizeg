@@ -67,7 +67,12 @@ function App(){
 
   const genP=useCallback(async(nv,pu,eu)=>{
     setLoad(true);setPerg(null);setSel(null);setCor(null);setElim([]);setPub(null);
-    if(nv%4===3&&eu.length<PEG.length){
+
+    // Cada 3 perguntas: 1 pergunta EG estática, 1 com dados reais PoweringEG, 1 IA
+    const slot=nv%3;
+
+    // Slot 0: pergunta EG estática (sobre a empresa, portais, etc)
+    if(slot===0&&eu.length<PEG.length){
       const d=PEG.filter((_,i)=>!eu.includes(i));
       const ix=Math.floor(Math.random()*d.length);
       const pi=PEG.indexOf(d[ix]);
@@ -75,8 +80,22 @@ function App(){
       setPerg({q:d[ix].q,o:d[ix].o,c:d[ix].c,e:d[ix].e,eg:true});
       setLoad(false);return;
     }
-    const catIdx=nv%4===3?nv%CATS.length:Math.floor(Math.random()*CATS.length);
-    const cat=CATS[catIdx];
+
+    // Slot 1: pergunta com dados reais do PoweringEG
+    if(slot===1){
+      try{
+        const res=await fetch(API_Q,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({useRealData:true})});
+        const dat=await res.json();
+        if(dat.realData){
+          setPerg(dat.realData);
+          setLoad(false);return;
+        }
+      }catch{}
+      // fallback para IA se falhar
+    }
+
+    // Slot 2 (ou fallback): pergunta gerada por IA
+    const cat=CATS[Math.floor(Math.random()*CATS.length)];
     const dif=DIFS[Math.min(nv,DIFS.length-1)];
     const ps=pu.length?"Nao repitas: "+pu.slice(-4).join(" | "):"";
     const seed=Math.floor(Math.random()*9999);
@@ -272,7 +291,7 @@ function App(){
             {fase==="jogo"&&nivel>0&&<button onClick={desistir} style={{background:"rgba(15,23,42,0.75)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:16,padding:"4px 9px",color:"rgba(255,255,255,0.6)",fontSize:10,cursor:"pointer"}}>Desistir</button>}
           </div>
         </div>
-        {perg?.eg&&!load&&<div style={{background:"rgba(30,58,95,0.88)",border:"1px solid #3b82f6",borderRadius:8,padding:"4px 10px",marginBottom:8,fontSize:10,color:"#93c5fd",fontWeight:700,textAlign:"center"}}>🏢 PERGUNTA EXPRESSGLASS</div>}
+        {perg?.eg&&!load&&<div style={{background:perg?.realData?"rgba(20,83,45,0.88)":"rgba(30,58,95,0.88)",border:`1px solid ${perg?.realData?"#4ade80":"#3b82f6"}`,borderRadius:8,padding:"4px 10px",marginBottom:8,fontSize:10,color:perg?.realData?"#bbf7d0":"#93c5fd",fontWeight:700,textAlign:"center"}}>{perg?.realData?"📊 DADOS REAIS EXPRESSGLASS":"🏢 PERGUNTA EXPRESSGLASS"}</div>}
         <div style={{background:"rgba(5,10,30,0.88)",border:"2px solid rgba(251,191,36,0.28)",borderRadius:16,padding:16,marginBottom:11,minHeight:88,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(12px)",boxShadow:"0 0 36px rgba(251,191,36,0.12)"}}>
           {load
             ?<div style={{textAlign:"center"}}><div style={{fontSize:26,marginBottom:5}}>⏳</div><div style={{color:"rgba(255,255,255,0.35)",fontSize:12}}>A preparar pergunta...</div></div>

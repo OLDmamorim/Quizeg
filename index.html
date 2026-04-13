@@ -28,6 +28,7 @@ const PEG=[
   {q:"Que tecnologia usa o agendamentosm?",o:["React + Node.js","Vanilla JS + Netlify Functions","Vue.js + Firebase","Angular + AWS"],c:1,e:"Vanilla JS no frontend com Netlify Functions como backend."},
   {q:"Qual a base de dados do agendamentosm?",o:["MySQL","MongoDB","Neon PostgreSQL","SQLite"],c:2,e:"PostgreSQL no Neon."},
   {q:"O que é o ADAS nos veículos modernos?",o:["Sistema de climatização","Câmara traseira","Sistema de assistência ao condutor","Travão automático"],c:2,e:"ADAS — câmaras no para-brisas que precisam de recalibração após substituição."},
+  {q:"Após substituir um para-brisas com sensor de chuva, como se testa o sensor?",o:["É necessário equipamento de diagnóstico para reprogramar o módulo","Basta deitar água no para-brisas e verificar se os limpadores reagem","O sensor tem de ser substituído junto com o para-brisas","Apenas o fabricante pode calibrar o sensor"],c:1,e:"O sensor de chuva é ótico e deteta humidade na superfície do vidro. Para o testar basta deitar água no para-brisas e verificar se os limpadores ativam automaticamente — não é necessário equipamento de diagnóstico."},
 ];
 const CATS=[
   {id:"marcas",    icon:"🚗", label:"Marcas & Modelos",   prompt:"marcas de automóveis, modelos icónicos e história da indústria automóvel"},
@@ -109,7 +110,7 @@ function App(){
     const dif=DIFS[Math.min(nv,DIFS.length-1)];
     const ps=pu.length?"Nao repitas: "+pu.slice(-4).join(" | "):"";
     const seed=Math.floor(Math.random()*9999);
-    const prompt=`Gera UMA pergunta PRÁTICA e INTERESSANTE (seed:${seed}) sobre: ${catObj.prompt}. Dificuldade: ${dif} (nivel ${nv+1} de ${NIVEIS.length}). ${ps} REGRAS: usa terminologia portuguesa correta (ex: óculo traseiro, não luneta); a pergunta deve ser clara e ter resposta inequívoca; evita perguntas académicas ou obscuras; prefere curiosidades do dia-a-dia do setor automóvel. Responde APENAS com JSON valido sem markdown: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""} - correta e o indice 0-3. Baralha opcoes.`;
+    const prompt=`Gera UMA pergunta PRÁTICA e INTERESSANTE (seed:${seed}) sobre: ${catObj.prompt}. Dificuldade: ${dif} (nivel ${nv+1} de ${NIVEIS.length}). ${ps} REGRAS: usa terminologia portuguesa correta (ex: óculo traseiro, não luneta); a pergunta deve ser clara e ter resposta inequívoca; evita perguntas académicas ou obscuras; prefere curiosidades do dia-a-dia do setor automóvel; NUNCA afirmes que o sensor de chuva precisa de diagnóstico ou reprogramação — o teste é deitar água no para-brisas. Responde APENAS com JSON valido sem markdown: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""} - correta e o indice 0-3. Baralha opcoes.`;
     try{
       const res=await fetch(API_Q,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
       const dat=await res.json();

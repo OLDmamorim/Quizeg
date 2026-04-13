@@ -43,6 +43,80 @@ const LT=["A","B","C","D"];
 const OV="rgba(5,5,20,0.80)";
 const BS={backgroundImage:`url(${BG})`,backgroundSize:"cover",backgroundPosition:"center top"};
 
+// ======================== SOUND ENGINE (Web Audio API) ========================
+const Sound=(()=>{
+  let ctx=null;let muted=false;let suspRunning=false;let suspTimer=null;let suspStep=0;
+  const ac=()=>{
+    if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();
+    if(ctx.state==='suspended')ctx.resume();return ctx;
+  };
+  const tone=(c,freq,type,start,dur,vol=0.3,ramp=0.01)=>{
+    try{
+      const o=c.createOscillator();const g=c.createGain();
+      o.connect(g);g.connect(c.destination);
+      o.type=type;o.frequency.setValueAtTime(freq,start);
+      g.gain.setValueAtTime(0,start);
+      g.gain.linearRampToValueAtTime(vol,start+ramp);
+      g.gain.linearRampToValueAtTime(0,start+dur);
+      o.start(start);o.stop(start+dur+0.05);
+    }catch(e){}
+  };
+  const correct=()=>{
+    if(muted)return;const c=ac();const t=c.currentTime;
+    [[523,0],[659,0.13],[784,0.26],[1047,0.39],[1568,0.55]].forEach(([f,d])=>tone(c,f,'sine',t+d,0.35,0.35));
+    [[2093,0.65],[2637,0.75]].forEach(([f,d])=>tone(c,f,'sine',t+d,0.18,0.12));
+  };
+  const wrong=()=>{
+    if(muted)return;const c=ac();const t=c.currentTime;
+    [[466,0],[415,0.18],[392,0.36],[370,0.54]].forEach(([f,d])=>tone(c,f,'sawtooth',t+d,0.32,0.22));
+    tone(c,110,'square',t+0.1,0.7,0.07);
+  };
+  const checkpoint=()=>{
+    if(muted)return;const c=ac();const t=c.currentTime;
+    [[523,0],[659,0.1],[784,0.2],[1047,0.3],[1319,0.42],[1568,0.56],[1319,0.7],[1568,0.84]].forEach(([f,d])=>tone(c,f,'sine',t+d,0.4,0.3));
+    tone(c,262,'sine',t,0.8,0.2);tone(c,262,'sine',t+0.45,0.4,0.15);
+  };
+  const win=()=>{
+    if(muted)return;const c=ac();const t=c.currentTime;
+    [[523,0],[659,0.1],[784,0.2],[1047,0.3],[1319,0.42],[1568,0.55],[1319,0.7],[1568,0.84],[2093,1.0],[1568,1.2],[2093,1.38]].forEach(([f,d])=>tone(c,f,'sine',t+d,0.5,0.32));
+    [[131,0],[165,0.3],[196,0.6],[262,1.0],[131,1.35]].forEach(([f,d])=>tone(c,f,'sine',t+d,0.55,0.25));
+  };
+  const appear=()=>{
+    if(muted)return;const c=ac();const t=c.currentTime;
+    tone(c,880,'sine',t,0.1,0.15);tone(c,1100,'sine',t+0.06,0.08,0.1);
+  };
+  const lifeSound=()=>{
+    if(muted)return;const c=ac();const t=c.currentTime;
+    [[392,0],[494,0.15],[523,0.32],[659,0.52]].forEach(([f,d])=>tone(c,f,'sine',t+d,0.28,0.2));
+    tone(c,196,'sine',t,0.45,0.18);
+  };
+  const startSuspense=()=>{
+    if(muted||suspRunning)return;
+    suspRunning=true;suspStep=0;
+    const tick=()=>{
+      if(!suspRunning||muted)return;
+      const c=ac();const t=c.currentTime;
+      tone(c,900,'sine',t,0.055,0.07,0.005);
+      if(suspStep%4===0)tone(c,120,'sine',t,0.22,0.18,0.02);
+      if(suspStep%8===7)tone(c,1400,'sine',t,0.08,0.06,0.005);
+      if(suspStep%2===1)tone(c,1000,'sine',t,0.03,0.04,0.005);
+      suspStep++;
+      const interval=Math.max(320,680-Math.min(suspStep*5,220));
+      suspTimer=setTimeout(tick,interval);
+    };
+    suspTimer=setTimeout(tick,350);
+  };
+  const stopSuspense=()=>{
+    suspRunning=false;
+    if(suspTimer){clearTimeout(suspTimer);suspTimer=null;}
+    suspStep=0;
+  };
+  const toggle=()=>{muted=!muted;if(muted)stopSuspense();return muted;};
+  const isMuted=()=>muted;
+  return{correct,wrong,checkpoint,win,appear,lifeSound,startSuspense,stopSuspense,toggle,isMuted};
+})();
+// =============================================================================
+
 function App(){
   const [fase,setFase]=useState("entrada");
   const [nome,setNome]=useState("");
@@ -62,6 +136,7 @@ function App(){
   const [loja,setLoja]=useState("");
   const [rl,setRl]=useState(false);
   const [vida,setVida]=useState(1); // 1 vida disponível
+  const [mute,setMute]=useState(false);
   const catSeq=React.useRef([]); // sequência aleatória de categorias por jogo
 
   // Gera sequência: 2×cada categoria, baralhada, garantindo EG_STATIC e EG_REALDATA
@@ -98,7 +173,7 @@ function App(){
       const pi=PEG.indexOf(d[ix]);
       setEgu(prev=>[...prev,pi]);
       setPerg({q:d[ix].q,o:d[ix].o,c:d[ix].c,e:d[ix].e,eg:true,catIcon:"🏢",catLabel:"ExpressGlass"});
-      setLoad(false);return;
+      Sound.appear();Sound.startSuspense();setLoad(false);return;
     }
 
     // Categoria: Resultados reais PoweringEG
@@ -108,7 +183,7 @@ function App(){
         const dat=await res.json();
         if(dat.realData){
           setPerg({...dat.realData,catIcon:"📊",catLabel:"Resultados EG"});
-          setLoad(false);return;
+          Sound.appear();Sound.startSuspense();setLoad(false);return;
         }
       }catch{}
       // fallback para próxima categoria se falhar
@@ -127,7 +202,7 @@ function App(){
     }catch{
       setPerg({q:"Erro ao carregar. Usa Pular.",o:["—","—","—","—"],c:-1,e:""});
     }
-    setLoad(false);
+    Sound.appear();Sound.startSuspense();setLoad(false);
   },[]);
 
   const ini=()=>{
@@ -136,35 +211,37 @@ function App(){
     catSeq.current=makeCatSeq();
     setFase("jogo");genP(0,[],[]);
   };
-  const resp=(i)=>{if(sel!==null||load||elim.includes(i))return;setSel(i);setCor(perg.c);setFase("resposta");};
+  const resp=(i)=>{if(sel!==null||load||elim.includes(i))return;Sound.stopSuspense();setSel(i);setCor(perg.c);setFase("resposta");};
   const avancar=()=>{
     if(sel===cor){
       if(NIVEIS[nivel].s)setSeg(nivel);
       const nn=nivel+1;
-      if(nn>=NIVEIS.length){saveR({nome:nome.trim()+" ("+loja.trim()+")",pts:NIVEIS[NIVEIS.length-1].pts,nivel:NIVEIS.length});setMot("ganhou");setFase("fim");return;}
+      if(nn>=NIVEIS.length){Sound.win();saveR({nome:nome.trim()+" ("+loja.trim()+")",pts:NIVEIS[NIVEIS.length-1].pts,nivel:NIVEIS.length});setMot("ganhou");setFase("fim");return;}
+      if(NIVEIS[nivel].s){Sound.checkpoint();}else{Sound.correct();}
       setNivel(nn);setFase("jogo");genP(nn,pul,egu);
     }else{
       if(vida>0){
-        // Tem vida — recua 1 nível e tenta de novo
+        Sound.lifeSound();
         setVida(0);
         const nivelAnterior=Math.max(0,nivel-1);
         setNivel(nivelAnterior);
         setFase("jogo");
         genP(nivelAnterior,pul,egu);
       }else{
-        // Sem vida — fim de jogo
+        Sound.wrong();
         const pts=seg!==null?NIVEIS[seg].pts:0;
         saveR({nome:nome.trim()+" ("+loja.trim()+")",pts,nivel});setMot("erro");setFase("fim");
       }
     }
   };
   const desistir=()=>{
+    Sound.stopSuspense();
     const pts=seg!==null?NIVEIS[seg].pts:nivel>0?NIVEIS[nivel-1].pts:0;
     saveR({nome:nome.trim()+" ("+loja.trim()+")",pts,nivel});setMot("desistiu");setFase("fim");
   };
   const u50=()=>{if(!aj.c||!perg||sel!==null)return;setAj(a=>({...a,c:false}));const e=[0,1,2,3].filter(i=>i!==perg.c);setElim(e.sort(()=>Math.random()-.5).slice(0,2));};
   const uPub=()=>{if(!aj.p||!perg||sel!==null)return;setAj(a=>({...a,p:false}));const ce=Math.max(40,80-nivel*4);const v=[0,1,2,3].map(i=>i===perg.c?ce:0);let s=100-ce;[0,1,2,3].filter(i=>i!==perg.c).forEach((i,ix,a)=>{const vv=ix===a.length-1?s:Math.floor(Math.random()*s*0.7);v[i]=vv;s-=vv;});setPub(v);};
-  const uPul=()=>{if(!aj.s||!perg||sel!==null)return;setAj(a=>({...a,s:false}));const np=[...pul,perg.q];setPul(np);genP(nivel,np,egu);};
+  const uPul=()=>{if(!aj.s||!perg||sel!==null)return;Sound.stopSuspense();setAj(a=>({...a,s:false}));const np=[...pul,perg.q];setPul(np);genP(nivel,np,egu);};
 
   const ptA=nivel>0?NIVEIS[nivel-1].pts:0;
   const ptS=seg!==null?NIVEIS[seg].pts:0;
@@ -231,7 +308,7 @@ function App(){
       <div style={{position:"absolute",inset:0,background:OV}}/>
       <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:480,padding:"20px 16px"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-          <button onClick={()=>setFase("entrada")} style={{background:"rgba(30,41,59,0.85)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:20,padding:"6px 14px",color:"rgba(255,255,255,0.7)",fontSize:12,cursor:"pointer"}}>← Voltar</button>
+          <button onClick={()=>{Sound.stopSuspense();setFase("ranking");loadR();}} style={{background:"rgba(30,41,59,0.85)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:20,padding:"6px 14px",color:"rgba(255,255,255,0.7)",fontSize:12,cursor:"pointer"}}>← Voltar</button>
           <div style={{fontSize:20,fontWeight:900,color:"#fbbf24"}}>🏆 RANKING GLOBAL</div>
           <button onClick={loadR} style={{background:"rgba(30,41,59,0.85)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:20,padding:"6px 14px",color:"rgba(255,255,255,0.7)",fontSize:12,cursor:"pointer"}}>↻</button>
         </div>
@@ -326,6 +403,7 @@ function App(){
           </div>
           <div style={{display:"flex",gap:5,alignItems:"center"}}>
             <button onClick={()=>{setFase("ranking");loadR();}} style={{background:"rgba(15,23,42,0.75)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:16,padding:"4px 9px",color:"rgba(255,255,255,0.6)",fontSize:10,cursor:"pointer"}}>🏆</button>
+            <button onClick={()=>{const m=Sound.toggle();setMute(m);}} style={{background:"rgba(15,23,42,0.75)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:16,padding:"4px 9px",color:"rgba(255,255,255,0.6)",fontSize:12,cursor:"pointer"}}>{mute?"🔇":"🔊"}</button>
             {fase==="jogo"&&nivel>0&&<button onClick={desistir} style={{background:"rgba(15,23,42,0.75)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:16,padding:"4px 9px",color:"rgba(255,255,255,0.6)",fontSize:10,cursor:"pointer"}}>Desistir</button>}
           </div>
         </div>

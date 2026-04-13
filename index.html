@@ -77,13 +77,13 @@ function App(){
     const dif=DIFS[Math.min(nv,DIFS.length-1)];
     const ps=pu.length?"Nao repitas: "+pu.slice(-4).join(" | "):"";
     try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{
+      const prompt=`Gera UMA pergunta sobre: ${cat}. Dificuldade: ${dif} (nivel ${nv+1} de ${NIVEIS.length}). ${ps} Em Portugues de Portugal. Responde APENAS com JSON valido sem markdown: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""} - correta e o indice 0-3. Baralha opcoes.`;
+      const res=await fetch("/.netlify/functions/joker-questions",{
         method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:500,
-          messages:[{role:"user",content:`Gera UMA pergunta sobre: ${cat}. Dificuldade: ${dif} (nivel ${nv+1} de ${NIVEIS.length}). ${ps} Em Portugues de Portugal. Responde APENAS com JSON: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""} - correta e o indice 0-3. Baralha opcoes.`}]})
+        body:JSON.stringify({prompt})
       });
       const dat=await res.json();
-      const txt=dat.content?.[0]?.text||"";
+      const txt=dat.text||"";
       const obj=JSON.parse(txt.replace(/```json|```/g,"").trim());
       setPerg({q:obj.pergunta,o:obj.opcoes,c:obj.correta,e:obj.explicacao});
     }catch{

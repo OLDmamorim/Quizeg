@@ -60,6 +60,7 @@ function App(){
   const [mot,setMot]=useState("");
   const [loja,setLoja]=useState("");
   const [rl,setRl]=useState(false);
+  const [vida,setVida]=useState(1); // 1 vida disponível
 
   useEffect(()=>{loadR();},[]);
 
@@ -122,7 +123,7 @@ function App(){
 
   const ini=()=>{
     if(!nome.trim())return;
-    setNivel(0);setSeg(null);setMot("");setAj({c:true,p:true,s:true});setPul([]);setEgu([]);
+    setNivel(0);setSeg(null);setMot("");setAj({c:true,p:true,s:true});setPul([]);setEgu([]);setVida(1);
     setFase("jogo");genP(0,[],[]);
   };
   const resp=(i)=>{if(sel!==null||load||elim.includes(i))return;setSel(i);setCor(perg.c);setFase("resposta");};
@@ -133,8 +134,18 @@ function App(){
       if(nn>=NIVEIS.length){saveR({nome:nome.trim()+" ("+loja.trim()+")",pts:NIVEIS[NIVEIS.length-1].pts,nivel:NIVEIS.length});setMot("ganhou");setFase("fim");return;}
       setNivel(nn);setFase("jogo");genP(nn,pul,egu);
     }else{
-      const pts=seg!==null?NIVEIS[seg].pts:0;
-      saveR({nome:nome.trim()+" ("+loja.trim()+")",pts,nivel});setMot("erro");setFase("fim");
+      if(vida>0){
+        // Tem vida — recua 1 nível e tenta de novo
+        setVida(0);
+        const nivelAnterior=Math.max(0,nivel-1);
+        setNivel(nivelAnterior);
+        setFase("jogo");
+        genP(nivelAnterior,pul,egu);
+      }else{
+        // Sem vida — fim de jogo
+        const pts=seg!==null?NIVEIS[seg].pts:0;
+        saveR({nome:nome.trim()+" ("+loja.trim()+")",pts,nivel});setMot("erro");setFase("fim");
+      }
     }
   };
   const desistir=()=>{
@@ -339,8 +350,8 @@ function App(){
           </div>
         )}
         {fase==="resposta"&&(
-          <button onClick={avancar} style={{background:sel===cor?"linear-gradient(135deg,#15803d,#166534)":"linear-gradient(135deg,#991b1b,#7f1d1d)",border:"none",borderRadius:50,padding:isMobile?15:13,color:"#fff",fontSize:isMobile?15:14,fontWeight:800,cursor:"pointer",width:"100%"}}>
-            {sel===cor?nivel<NIVEIS.length-1?`Avançar → ${NIVEIS[nivel+1].pts.toLocaleString()} serv.`:"🏆 VENCESTE!":`Levei ${ptS.toLocaleString()} serviços`}
+          <button onClick={avancar} style={{background:sel===cor?"linear-gradient(135deg,#15803d,#166534)":vida>0?"linear-gradient(135deg,#b45309,#92400e)":"linear-gradient(135deg,#991b1b,#7f1d1d)",border:"none",borderRadius:50,padding:isMobile?15:13,color:"#fff",fontSize:isMobile?15:14,fontWeight:800,cursor:"pointer",width:"100%"}}>
+            {sel===cor?nivel<NIVEIS.length-1?`Avançar → ${NIVEIS[nivel+1].pts.toLocaleString()} serv.`:"🏆 VENCESTE!":vida>0?`❤️ Segunda chance! Recuar para nível ${Math.max(1,nivel)}`:`Levei ${ptS.toLocaleString()} serviços`}
           </button>
         )}
         {seg!==null&&fase==="jogo"&&<div style={{textAlign:"center",marginTop:6,fontSize:10,color:"rgba(255,255,255,0.32)"}}>🛡️ Seguro: {ptS.toLocaleString()} serv.</div>}

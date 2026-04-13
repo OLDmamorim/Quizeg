@@ -62,6 +62,14 @@ function App(){
   const [loja,setLoja]=useState("");
   const [rl,setRl]=useState(false);
   const [vida,setVida]=useState(1); // 1 vida disponível
+  const catSeq=React.useRef([]); // sequência aleatória de categorias por jogo
+
+  // Gera sequência: 2×cada categoria, baralhada, garantindo EG_STATIC e EG_REALDATA
+  const makeCatSeq=()=>{
+    const arr=Array.from({length:NIVEIS.length},(_,i)=>i%CATS.length);
+    for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+    return arr;
+  };
 
   useEffect(()=>{loadR();},[]);
 
@@ -80,8 +88,8 @@ function App(){
     // Cada 3 perguntas: 1 pergunta EG estática, 1 com dados reais PoweringEG, 1 IA
     const slot=nv%3;
 
-    // Escolher categoria — rodar pelas 6, mas EG_STATIC e EG_REALDATA têm tratamento especial
-    const catObj = CATS[nv % CATS.length];
+    // Escolher categoria a partir da sequência aleatória do jogo
+    const catObj = CATS[catSeq.current[nv] ?? (nv % CATS.length)];
 
     // Categoria: EG estática
     if(catObj.prompt==="EG_STATIC"&&eu.length<PEG.length){
@@ -125,6 +133,7 @@ function App(){
   const ini=()=>{
     if(!nome.trim())return;
     setNivel(0);setSeg(null);setMot("");setAj({c:true,p:true,s:true});setPul([]);setEgu([]);setVida(1);
+    catSeq.current=makeCatSeq();
     setFase("jogo");genP(0,[],[]);
   };
   const resp=(i)=>{if(sel!==null||load||elim.includes(i))return;setSel(i);setCor(perg.c);setFase("resposta");};

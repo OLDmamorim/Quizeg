@@ -109,7 +109,7 @@ function App(){
     const dif=DIFS[Math.min(nv,DIFS.length-1)];
     const ps=pu.length?"Nao repitas: "+pu.slice(-4).join(" | "):"";
     const seed=Math.floor(Math.random()*9999);
-    const prompt=`Gera UMA pergunta DIFERENTE e SURPREENDENTE (seed:${seed}) sobre: ${catObj.prompt}. Dificuldade: ${dif} (nivel ${nv+1} de ${NIVEIS.length}). ${ps} A pergunta deve ser SEMPRE relacionada com automóveis, viação ou vidros. Nao uses perguntas obvias. Em Portugues de Portugal. Responde APENAS com JSON valido sem markdown: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""} - correta e o indice 0-3. Baralha opcoes.`;
+    const prompt=`Gera UMA pergunta PRÁTICA e INTERESSANTE (seed:${seed}) sobre: ${catObj.prompt}. Dificuldade: ${dif} (nivel ${nv+1} de ${NIVEIS.length}). ${ps} REGRAS: usa terminologia portuguesa correta (ex: óculo traseiro, não luneta); a pergunta deve ser clara e ter resposta inequívoca; evita perguntas académicas ou obscuras; prefere curiosidades do dia-a-dia do setor automóvel. Responde APENAS com JSON valido sem markdown: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""} - correta e o indice 0-3. Baralha opcoes.`;
     try{
       const res=await fetch(API_Q,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
       const dat=await res.json();

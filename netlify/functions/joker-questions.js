@@ -222,9 +222,12 @@ exports.handler = async (event) => {
     }
     if (!prompt) return { statusCode: 400, headers, body: JSON.stringify({ error: 'prompt obrigatório' }) };
 
+    // Reforçar que só queremos perguntas de automóvel/vidros
+    const systemPrompt = 'És um especialista em automóveis, vidros automóvel, código da estrada PORTUGUÊS e setor de reparação de vidros. Só geras perguntas relacionadas com estes temas. MUITO IMPORTANTE: usa sempre terminologia portuguesa correta — por exemplo o vidro traseiro chama-se ÓCULO TRASEIRO (não luneta, não vidro posterior), o para-brisas é o vidro frontal, as janelas laterais chamam-se vidros laterais. As perguntas e respostas devem ser 100% corretas e usar português de Portugal. Nunca inventes termos técnicos — se não tens a certeza, não uses. As perguntas devem ser práticas, interessantes e acessíveis para qualquer pessoa que trabalhe no setor automóvel.';
     const resposta = await httpsPost('api.anthropic.com', '/v1/messages', {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
+      system: systemPrompt,
       messages: [{ role: 'user', content: prompt }]
     }, {
       'Content-Type': 'application/json',

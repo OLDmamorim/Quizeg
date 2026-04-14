@@ -18,17 +18,18 @@ const API_RANK="/.netlify/functions/joker-ranking";
 const API_Q="/.netlify/functions/joker-questions";
 const NIVEIS=[{pts:1,s:false},{pts:2,s:false},{pts:3,s:false},{pts:4,s:false},{pts:5,s:true},{pts:6,s:false},{pts:7,s:false},{pts:8,s:false},{pts:9,s:true},{pts:10,s:false},{pts:11,s:false},{pts:12,s:false}];
 const PEG=[
-  {q:"Qual o nome do sistema de agendamento das lojas SM da ExpressGlass?",o:["AgendaSM","PoweringEG","PHC Agenda","SmartGlass"],c:0,e:"O agendamentosm.netlify.app é o portal de agendamento dos SM."},
-  {q:"Qual a plataforma de supervisão de lojas da ExpressGlass?",o:["ReportAxial","PoweringEG","ExpressPortal","GlassManager"],c:1,e:"O PoweringEG é a plataforma de supervisão de lojas."},
-  {q:"O que significa SM nas lojas SM da ExpressGlass?",o:["Serviço Móvel","Super Mercado","Sem Montra","Sistema Modular"],c:0,e:"SM = Serviço Móvel — técnicos que se deslocam ao cliente."},
-  {q:"Qual o principal produto de reparação na ExpressGlass?",o:["Vidros traseiros","Para-brisas","Janelas laterais","Tetos de abrir"],c:1,e:"O para-brisas é o produto central de substituição e reparação."},
-  {q:"Quantas lojas tem a região Minho da ExpressGlass?",o:["5 lojas","10 lojas","14 lojas","20 lojas"],c:2,e:"A região Minho tem 14 lojas."},
-  {q:"Qual o código nmdos da Famalicão SM?",o:["Ficha Servico 09","Ficha Servico 61","Ficha Servico 52","Ficha Servico 18"],c:1,e:"Famalicão SM usa Ficha Servico 61."},
-  {q:"O que é a taxa de reparação na ExpressGlass?",o:["% vidros reparados vs substituídos","% clientes satisfeitos","% serviços pagos","% vidros em stock"],c:0,e:"Mede a % de vidros reparados vs substituídos."},
-  {q:"Que tecnologia usa o agendamentosm?",o:["React + Node.js","Vanilla JS + Netlify Functions","Vue.js + Firebase","Angular + AWS"],c:1,e:"Vanilla JS no frontend com Netlify Functions como backend."},
-  {q:"Qual a base de dados do agendamentosm?",o:["MySQL","MongoDB","Neon PostgreSQL","SQLite"],c:2,e:"PostgreSQL no Neon."},
-  {q:"O que é o ADAS nos veículos modernos?",o:["Sistema de climatização","Câmara traseira","Sistema de assistência ao condutor","Travão automático"],c:2,e:"ADAS — câmaras no para-brisas que precisam de recalibração após substituição."},
-  {q:"Após substituir um para-brisas com sensor de chuva, como se testa o sensor?",o:["É necessário equipamento de diagnóstico para reprogramar o módulo","Basta deitar água no para-brisas e verificar se os limpadores reagem","O sensor tem de ser substituído junto com o para-brisas","Apenas o fabricante pode calibrar o sensor"],c:1,e:"O sensor de chuva é ótico e deteta humidade na superfície do vidro. Para o testar basta deitar água no para-brisas e verificar se os limpadores ativam automaticamente — não é necessário equipamento de diagnóstico."},
+  {q:"Em que ano foi fundada a ExpressGlass?",o:["1998","2002","2006","2010"],c:1,e:"A ExpressGlass foi fundada em 2002 e cresceu para ser a maior rede de substituição de vidros automóvel em Portugal."},
+  {q:"Quantas lojas tem a ExpressGlass em Portugal?",o:["Cerca de 40","Cerca de 60","Cerca de 81","Mais de 120"],c:2,e:"A ExpressGlass tem cerca de 81 lojas em Portugal continental, Madeira e Açores."},
+  {q:"O que significa SM nas lojas SM da ExpressGlass?",o:["Serviço Móvel","Super Mercado","Sem Montra","Sistema Modular"],c:0,e:"SM = Serviço Móvel — técnicos que se deslocam ao local do cliente para realizar o serviço."},
+  {q:"Qual o principal produto de reparação na ExpressGlass?",o:["Vidros traseiros","Para-brisas","Janelas laterais","Tetos de abrir"],c:1,e:"O para-brisas é o produto central — é o vidro mais substituído e o único que pode ser reparado sem substituição total quando a fratura é pequena."},
+  {q:"O que é a taxa de reparação na ExpressGlass?",o:["% vidros reparados vs substituídos","% clientes satisfeitos","% serviços pagos","% vidros em stock"],c:0,e:"A taxa de reparação mede a percentagem de vidros reparados face ao total de serviços (reparação + substituição). Quanto maior, melhor para o cliente e para o seguro."},
+  {q:"O que cobre a garantia QIV numa substituição de para-brisas?",o:["Apenas o vidro","Apenas a mão-de-obra","Vidro e mão-de-obra","Só peças originais"],c:2,e:"A garantia QIV cobre tanto o vidro como a mão-de-obra da substituição, dando maior tranquilidade ao cliente."},
+  {q:"Qual o tipo de vidro usado nos para-brisas modernos?",o:["Vidro temperado","Vidro laminado","Vidro acrílico","Vidro endurecido"],c:1,e:"O para-brisas é feito de vidro laminado (duas camadas com PVB entre elas), que em caso de rotura não se fragmenta em estilhaços — ao contrário do vidro temperado usado nos óculos traseiros."},
+  {q:"O que é o ADAS nos veículos modernos?",o:["Sistema de climatização","Câmara traseira","Sistema de assistência ao condutor","Travão automático"],c:2,e:"ADAS (Advanced Driver Assistance Systems) inclui câmaras e sensores no para-brisas que precisam de recalibração após substituição do vidro."},
+  {q:"Após substituir um para-brisas com sensor de chuva, como se testa o sensor?",o:["É necessário equipamento de diagnóstico para reprogramar o módulo","Basta deitar água no para-brisas e verificar se os limpadores reagem","O sensor tem de ser substituído junto com o para-brisas","Apenas o fabricante pode calibrar o sensor"],c:1,e:"O sensor de chuva é ótico e deteta humidade na superfície do vidro. Para o testar basta deitar água no para-brisas e verificar se os limpadores ativam automaticamente."},
+  {q:"O que é o Betaseal na substituição de para-brisas?",o:["Um tipo de vidro laminado","O produto adesivo poliuretano para fixar o vidro","Um equipamento de corte","O nome do suporte do para-brisas"],c:1,e:"O Betaseal é o poliuretano (PU) usado para colar o para-brisas à carroçaria. Tem tempos de secagem específicos que devem ser respeitados antes de circular."},
+  {q:"Qual o número de emergência nacional em Portugal?",o:["115","118","112","119"],c:2,e:"O 112 é o número europeu de emergência, disponível em toda a UE, incluindo Portugal."},
+  {q:"O que deve o técnico verificar antes de devolver o veículo ao cliente após substituição do para-brisas?",o:["Apenas a estanqueidade do vidro","Estanqueidade, calibração ADAS se aplicável, e teste dos limpadores","Só a calibração do sensor de chuva","Apenas limpar o vidro por dentro"],c:1,e:"Antes de devolver o veículo, o técnico deve verificar a estanqueidade, calibrar o ADAS se o veículo tiver (câmara no para-brisas), e testar os limpadores e sensor de chuva."},
 ];
 const CATS=[
   {id:"marcas",    icon:"🚗", label:"Marcas & Modelos",   prompt:"marcas de automóveis, modelos icónicos e história da indústria automóvel"},
@@ -139,11 +140,14 @@ function App(){
   const [mute,setMute]=useState(false);
   const catSeq=React.useRef([]); // sequência aleatória de categorias por jogo
 
-  // Gera sequência: 2×cada categoria, baralhada, garantindo EG_STATIC e EG_REALDATA
+  // Gera sequência garantindo EG_STATIC e EG_REALDATA nas primeiras 6 perguntas
   const makeCatSeq=()=>{
-    const arr=Array.from({length:NIVEIS.length},(_,i)=>i%CATS.length);
-    for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
-    return arr;
+    // Metade 1 (níveis 0-5): garante índice 4 (EG_STATIC) e 5 (EG_REALDATA) + 4 aleatórios de 0-3
+    const outras=[0,1,2,3];
+    const h1=[4,5,...outras].sort(()=>Math.random()-.5);
+    // Metade 2 (níveis 6-11): 6 categorias baralhadas sem EG obrigatório
+    const h2=[0,1,2,3,4,5].sort(()=>Math.random()-.5);
+    return [...h1,...h2];
   };
 
   useEffect(()=>{loadR();},[]);
@@ -186,7 +190,20 @@ function App(){
           Sound.appear();Sound.startSuspense();setLoad(false);return;
         }
       }catch{}
-      // fallback para próxima categoria se falhar
+      // fallback: usa categoria IA aleatória (não EG_STATIC nem EG_REALDATA)
+      const fallbackCat=CATS[Math.floor(Math.random()*4)];
+      const dif2=DIFS[Math.min(nv,DIFS.length-1)];
+      const seed2=Math.floor(Math.random()*9999);
+      const prompt2=`Gera UMA pergunta PRÁTICA e INTERESSANTE (seed:${seed2}) sobre: ${fallbackCat.prompt}. Dificuldade: ${dif2}. REGRAS: usa terminologia portuguesa; pergunta clara e inequívoca; prefere curiosidades do dia-a-dia. Responde APENAS com JSON: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""}`;
+      try{
+        const res2=await fetch(API_Q,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:prompt2})});
+        const dat2=await res2.json();
+        const obj2=JSON.parse((dat2.text||"").replace(/```json|```/g,"").trim());
+        setPerg({q:obj2.pergunta,o:obj2.opcoes,c:obj2.correta,e:obj2.explicacao,catIcon:fallbackCat.icon,catLabel:fallbackCat.label});
+      }catch{
+        setPerg({q:"Erro ao carregar. Usa Pular.",o:["—","—","—","—"],c:-1,e:""});
+      }
+      Sound.appear();Sound.startSuspense();setLoad(false);return;
     }
 
     // Categoria IA: automóvel/vidros

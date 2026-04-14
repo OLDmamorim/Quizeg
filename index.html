@@ -138,17 +138,9 @@ function App(){
   const [rl,setRl]=useState(false);
   const [vida,setVida]=useState(1); // 1 vida disponível
   const [mute,setMute]=useState(false);
-  const catSeq=React.useRef([]); // sequência aleatória de categorias por jogo
-
-  // Gera sequência garantindo EG_STATIC e EG_REALDATA nas primeiras 6 perguntas
-  const makeCatSeq=()=>{
-    // Metade 1 (níveis 0-5): garante índice 4 (EG_STATIC) e 5 (EG_REALDATA) + 4 aleatórios de 0-3
-    const outras=[0,1,2,3];
-    const h1=[4,5,...outras].sort(()=>Math.random()-.5);
-    // Metade 2 (níveis 6-11): 6 categorias baralhadas sem EG obrigatório
-    const h2=[0,1,2,3,4,5].sort(()=>Math.random()-.5);
-    return [...h1,...h2];
-  };
+  // Categorias EG em posições fixas: níveis 1,4,7,10 → EG (alternando STATIC/REALDATA)
+  // Restantes → categoria IA aleatória por jogo
+  const iaCatPerm=React.useRef([]);
 
   useEffect(()=>{loadR();},[]);
 
@@ -164,14 +156,14 @@ function App(){
   const genP=useCallback(async(nv,pu,eu)=>{
     setLoad(true);setPerg(null);setSel(null);setCor(null);setElim([]);setPub(null);
 
-    // Cada 3 perguntas: 1 pergunta EG estática, 1 com dados reais PoweringEG, 1 IA
-    const slot=nv%3;
+    // REGRA FIXA: níveis 1,4,7,10 → ExpressGlass (alternando STATIC e REALDATA)
+    //             restantes → categoria IA (ordem aleatória por jogo)
+    const EG_NIVEIS=[1,4,7,10];
+    const isEG=EG_NIVEIS.includes(nv);
+    const egIsStatic=[1,7].includes(nv); // 1 e 7 → EG_STATIC; 4 e 10 → EG_REALDATA
 
-    // Escolher categoria a partir da sequência aleatória do jogo
-    const catObj = CATS[catSeq.current[nv] ?? (nv % CATS.length)];
-
-    // Categoria: EG estática
-    if(catObj.prompt==="EG_STATIC"&&eu.length<PEG.length){
+    // Categoria EG_STATIC
+    if(isEG && egIsStatic && eu.length<PEG.length){
       const d=PEG.filter((_,i)=>!eu.includes(i));
       const ix=Math.floor(Math.random()*d.length);
       const pi=PEG.indexOf(d[ix]);
@@ -180,8 +172,8 @@ function App(){
       Sound.appear();Sound.startSuspense();setLoad(false);return;
     }
 
-    // Categoria: Resultados reais PoweringEG
-    if(catObj.prompt==="EG_REALDATA"){
+    // Categoria EG_REALDATA (níveis 4 e 10)
+    if(isEG && !egIsStatic){
       try{
         const res=await fetch(API_Q,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({useRealData:true})});
         const dat=await res.json();
@@ -190,32 +182,29 @@ function App(){
           Sound.appear();Sound.startSuspense();setLoad(false);return;
         }
       }catch{}
-      // fallback: usa categoria IA aleatória (não EG_STATIC nem EG_REALDATA)
-      const fallbackCat=CATS[Math.floor(Math.random()*4)];
-      const dif2=DIFS[Math.min(nv,DIFS.length-1)];
-      const seed2=Math.floor(Math.random()*9999);
-      const prompt2=`Gera UMA pergunta PRÁTICA e INTERESSANTE (seed:${seed2}) sobre: ${fallbackCat.prompt}. Dificuldade: ${dif2}. REGRAS: usa terminologia portuguesa; pergunta clara e inequívoca; prefere curiosidades do dia-a-dia. Responde APENAS com JSON: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""}`;
-      try{
-        const res2=await fetch(API_Q,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:prompt2})});
-        const dat2=await res2.json();
-        const obj2=JSON.parse((dat2.text||"").replace(/```json|```/g,"").trim());
-        setPerg({q:obj2.pergunta,o:obj2.opcoes,c:obj2.correta,e:obj2.explicacao,catIcon:fallbackCat.icon,catLabel:fallbackCat.label});
-      }catch{
-        setPerg({q:"Erro ao carregar. Usa Pular.",o:["—","—","—","—"],c:-1,e:""});
+      // PoweringEG falhou → usa EG_STATIC como fallback garantido
+      if(eu.length<PEG.length){
+        const d=PEG.filter((_,i)=>!eu.includes(i));
+        const ix=Math.floor(Math.random()*d.length);
+        const pi=PEG.indexOf(d[ix]);
+        setEgu(prev=>[...prev,pi]);
+        setPerg({q:d[ix].q,o:d[ix].o,c:d[ix].c,e:d[ix].e,eg:true,catIcon:"🏢",catLabel:"ExpressGlass"});
+        Sound.appear();Sound.startSuspense();setLoad(false);return;
       }
-      Sound.appear();Sound.startSuspense();setLoad(false);return;
     }
 
-    // Categoria IA: automóvel/vidros
+    // Categoria IA (todos os outros níveis) — ordem aleatória por jogo
+    const iaCats=CATS.slice(0,4); // marcas, tecnologia, vidros, estrada
+    const catIA=iaCats[iaCatPerm.current[nv%4]??Math.floor(Math.random()*4)];
     const dif=DIFS[Math.min(nv,DIFS.length-1)];
     const ps=pu.length?"Nao repitas: "+pu.slice(-4).join(" | "):"";
     const seed=Math.floor(Math.random()*9999);
-    const prompt=`Gera UMA pergunta PRÁTICA e INTERESSANTE (seed:${seed}) sobre: ${catObj.prompt}. Dificuldade: ${dif} (nivel ${nv+1} de ${NIVEIS.length}). ${ps} REGRAS: usa terminologia portuguesa correta (ex: óculo traseiro, não luneta); a pergunta deve ser clara e ter resposta inequívoca; evita perguntas académicas ou obscuras; prefere curiosidades do dia-a-dia do setor automóvel; NUNCA afirmes que o sensor de chuva precisa de diagnóstico ou reprogramação — o teste é deitar água no para-brisas. Responde APENAS com JSON valido sem markdown: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""} - correta e o indice 0-3. Baralha opcoes.`;
+    const prompt=`Gera UMA pergunta PRÁTICA e INTERESSANTE (seed:${seed}) sobre: ${catIA.prompt}. Dificuldade: ${dif} (nivel ${nv+1} de ${NIVEIS.length}). ${ps} REGRAS: usa terminologia portuguesa correta (ex: óculo traseiro, não luneta); a pergunta deve ser clara e ter resposta inequívoca; evita perguntas académicas ou obscuras; prefere curiosidades do dia-a-dia do setor automóvel; NUNCA afirmes que o sensor de chuva precisa de diagnóstico ou reprogramação. Responde APENAS com JSON valido sem markdown: {"pergunta":"","opcoes":["","","",""],"correta":0,"explicacao":""} - correta e o indice 0-3. Baralha opcoes.`;
     try{
       const res=await fetch(API_Q,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
       const dat=await res.json();
       const obj=JSON.parse((dat.text||"").replace(/```json|```/g,"").trim());
-      setPerg({q:obj.pergunta,o:obj.opcoes,c:obj.correta,e:obj.explicacao,catIcon:catObj.icon,catLabel:catObj.label});
+      setPerg({q:obj.pergunta,o:obj.opcoes,c:obj.correta,e:obj.explicacao,catIcon:catIA.icon,catLabel:catIA.label});
     }catch{
       setPerg({q:"Erro ao carregar. Usa Pular.",o:["—","—","—","—"],c:-1,e:""});
     }
@@ -225,7 +214,8 @@ function App(){
   const ini=()=>{
     if(!nome.trim())return;
     setNivel(0);setSeg(null);setMot("");setAj({c:true,p:true,s:true});setPul([]);setEgu([]);setVida(1);
-    catSeq.current=makeCatSeq();
+    // Permutação aleatória das 4 categorias IA para variar ordem entre jogos
+    iaCatPerm.current=[0,1,2,3].sort(()=>Math.random()-.5);
     setFase("jogo");genP(0,[],[]);
   };
   const resp=(i)=>{if(sel!==null||load||elim.includes(i))return;Sound.stopSuspense();setSel(i);setCor(perg.c);setFase("resposta");};
